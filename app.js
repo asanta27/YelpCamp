@@ -7,26 +7,21 @@ var express       = require("express"),
     passport      = require("passport"),
     LocalStrategy = require("passport-local"),
     methodOverride = require("method-override"),
-    Campground    = require("./models/campground"),
-    User          = require("./models/user"),
-    seedDB        = require("./seeds"),
-    Comment       = require("./models/comment");
+    User          = require("./models/user");
     
 // refactored routes
 var commentRoutes    = require("./routes/comments"),
     campgroundRoutes = require("./routes/campgrounds"),
     indexRoutes       = require("./routes/index");
-    
-mongoose.connect(process.env.DATABASEURL, {useMongoClient: true});
-// mongoose.connect("mongodb://admin:password@ds155577.mlab.com:55577/yelp-camp", {useMongoClient: true});
+
+var url = process.env.DATABASEURL || "mongodb://localhost/yelp_camp";
+mongoose.connect(url, {useMongoClient: true});
 
 app.set("view engine","ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static(__dirname + "/public"));
 app.use(methodOverride("_method"));
 app.use(flash());
-// seed the db
-// seedDB();
 
 // Passport configuration
 app.use(require("express-session")({
