@@ -23,3 +23,9 @@
     text-align: center;
     text-decoration: strong;
 }
+
+/* Google Maps */
+#map {
+    height: 400px;
+    width: 100%;
+}

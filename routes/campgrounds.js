@@ -1,7 +1,8 @@
 var express    = require("express"),
     router     = express.Router(),
     Campground = require("../models/campground"),
-    middleware =require("../middleware");
+    middleware = require("../middleware"),
+    geocoder   = require("geocoder");
 
 // renders all campgrounds
 router.get("/", function(req,res){
@@ -24,23 +25,28 @@ router.post("/", middleware.isLoggedIn, function(req, res){
         id: req.user._id,
         username: req.user.username
     };
-    
-    var newCampground = {
-        name: name,
-        image: image,
-        description: description,
-        price: price,
-        author: author
-    };
-    
-   Campground.create(newCampground, function(err, createdCampground){
+    geocoder.geocode(req.body.location, function (err, data) {
         if(err){
             console.log(err);
-        } else {
-            console.log("New: " + createdCampground.name);
-            req.flash("success", "New campground added!");
-            res.redirect("/campgrounds");
         }
+        var lat = data.results[0].geometry.location.lat;
+        var lng = data.results[0].geometry.location.lng;
+        var location = data.results[0].formatted_address;
+        
+        var newCampground = {
+            name: name, image: image, description: description, 
+            price: price, author:author, location: location, lat: lat, lng: lng
+        };
+        
+       Campground.create(newCampground, function(err, createdCampground){
+            if(err){
+                console.log(err);
+            } else {
+                console.log("New: " + createdCampground.name);
+                req.flash("success", "New campground added!");
+                res.redirect("/campgrounds");
+            }
+       });
     });
 });
 
@@ -55,7 +61,7 @@ router.get("/:id", function(req, res) {
         if(err){
             console.log(err);
             req.flash("error", "Error");
-            res.render("/")
+            res.render("/");
         } else {
             //render show template with that campground
             res.render("campgrounds/show", {campground: foundCampground});
@@ -78,15 +84,27 @@ router.get("/:id/edit", middleware.checkCampgroundOwnership, function(req, res) 
 
 // update campground
 router.put("/:id", middleware.checkCampgroundOwnership,function(req, res) {
-    Campground.findByIdAndUpdate(req.params.id, req.body.campground, function(err, updatedCampground){
+    geocoder.geocode(req.body.location, function (err, data) {
         if(err){
             console.log(err);
-            req.flash("error", "Error");
-            res.redirect("/campgrounds");
-        } else {
-            req.flash("success", "Campground updated!");
-            res.redirect("/campgrounds/" + req.params.id);
         }
+        var lat = data.results[0].geometry.location.lat;
+        var lng = data.results[0].geometry.location.lng;
+        var location = data.results[0].formatted_address;
+        var newData = {
+                    name: req.body.name, image: req.body.image, description: req.body.description, 
+                    price: req.body.price, location: location, lat: lat, lng: lng
+                    };
+        Campground.findByIdAndUpdate(req.params.id, {$set: newData}, function(err, updatedCampground){
+            if(err){
+                console.log(err);
+                req.flash("error", err.message);
+                res.redirect("/campgrounds");
+            } else {
+                req.flash("success", "Campground updated!");
+                res.redirect("/campgrounds/" + updatedCampground._id);
+            }
+        });
     });
 });
 
