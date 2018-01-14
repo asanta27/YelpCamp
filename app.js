@@ -1,5 +1,4 @@
 var express       = require("express"),
-    router     = express.Router(),
     app           = express(),
     bodyParser    = require("body-parser"),
     mongoose      = require("mongoose"),
